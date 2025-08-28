@@ -253,16 +253,17 @@ export async function verifyOTP(req, res) {
     }
 }
 
-export async function newPassword(req,res) {
+export async function newPassword(req, res) {
     const { email, newpassword } = req.body;
-    try{
+    try {
         const hashedPassword = bcrypt.hashSync(newpassword, 10);
-        await User.updateOne({ email }, {$set:{ password: hashedPassword }});
+/* update password */
+        await User.updateOne({ email }, { $set: { password: hashedPassword } });
         return res.status(200).json({ success: true, message: "Password reset successfully" });
-    }catch{
+    } catch {
         res.status(500).json({
             message: "Failed to reset password"
         });
     }
-    
+
 }
