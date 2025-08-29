@@ -100,34 +100,32 @@ export async function updateProducts(req, res) {
 }
 
 export async function getproductsInfo(req, res) {
-
+    const productId = req.params.productId;
 
     try {
-        const productId = req.params.productId
-        const product = await Product.findOne({ productId: productId })
+        const product = await Product.findOne({ productId: productId });
 
-        if (product == null) {
-            return res.status(404).json({ message: "Product not found" })
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
         }
 
         if (isAdmin(req)) {
-            res.json(product)
-
-        } else {
-            if (product.isAvailable) {
-                res.json(product)
-            } else {
-
-                res.status(404).json({ message: "Product is not Avilable" })
-            }
+            return res.json(product); // return the object
         }
 
-    } catch (error) {
-        console.error("Error fetching products")
-        res.status(403).json({ message: "Failed to fetch products" })
-    }
+        if (product.isAvailable) {
+            return res.json(product);
+        }
 
+        return res.status(404).json({ message: "Product is not Available" });
+
+    } catch (error) {
+        console.error("Error fetching products", error);
+        res.status(500).json({ message: "Failed to fetch products" });
+    }
 }
+
+
 
 export async function searchproducts(req, res) {
     const productname = req.params.productname;
