@@ -1,10 +1,10 @@
 import express from "express"
-import { createUser, forgetPassword, getUser, googlelogin, isUser, loginUser, newPassword, verifyOTP} from "../Controllers/userController.js"
+import { adminValidate, createUser, forgetPassword, getUser, googlelogin,loginUser, newPassword, verifyOTP} from "../Controllers/userController.js"
 
 const userRouter = express.Router()
 userRouter.post("/",createUser)
 userRouter.get("/",getUser)
-userRouter.get("/isuser",isUser)
+userRouter.get("/isadmin",adminValidate)
 userRouter.post("/login",loginUser)
 userRouter.post("/google-login",googlelogin)
 userRouter.post("/forget-password",forgetPassword)

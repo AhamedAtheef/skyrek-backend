@@ -97,11 +97,11 @@ export function loginUser(req, res) {
 }
 
 
-export function isUser(req) {
-    if (req.user == null) {
-        res.status(401).json({ message: "user not found" })
+export function adminValidate(req,res){
+    if (isAdmin(req)) {
+        return res.json({ role: "Admin" });
     } else {
-        res.json(req.user)
+        return res.json({ role: "User" });
     }
 }
 
@@ -257,13 +257,18 @@ export async function newPassword(req, res) {
     const { email, newpassword } = req.body;
     try {
         const hashedPassword = bcrypt.hashSync(newpassword, 10);
-/* update password */
-        await User.updateOne({ email }, { $set: { password: hashedPassword } });
-        return res.status(200).json({ success: true, message: "Password reset successfully" });
-    } catch {
-        res.status(500).json({
-            message: "Failed to reset password"
-        });
-    }
 
+        const result = await User.updateOne(
+            { email },
+            { $set: { password: hashedPassword } }
+        );
+
+        if (result.matchedCount > 0) {
+            return res.json({ success: true, message: "Password reset successfully" });
+        } else {
+            return res.json({ success: false, message: "User not found" });
+        }
+    } catch {
+        return res.json({ success: false, message: "Failed to reset password" });
+    }
 }

@@ -5,8 +5,8 @@ const productrouter = express.Router()
 
 productrouter.post("/", createProducts);
 
-productrouter.get("/page/:page/:limit", getProducts);   // <-- prefixed "page"
-productrouter.get("/", getProducts);
+productrouter.get("/:page/:limit", getProducts);   // <-- prefixed "page"
+
 
 productrouter.get("/search/:productname", searchproducts); // <-- prefixed "search"
 productrouter.get("/info/:productId", getproductsInfo);    // <-- prefixed "info"
