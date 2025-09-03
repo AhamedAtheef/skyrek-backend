@@ -72,7 +72,7 @@ export function loginUser(req, res) {
 
         const isPasswordCorrect = bcrypt.compareSync(password, user.password);
         if (!isPasswordCorrect) {
-            return res.status(401).json({ message: "Incorrect Password" }); // 👈 send proper 401
+            return res.status(401).json({ message: "Incorrect Password" }); 
         }
 
         const token = jwt.sign(

@@ -26,30 +26,7 @@ export async function createProducts(req, res) {
 
 }
 
-export async function getProducts(req, res) {
-    const page = parseInt(req.params.page) || 1
-    const limit = parseInt(req.params.limit);
 
-
-    try {
-        if (isAdmin(req)) {
-            let countPage = await Product.countDocuments();
-            let totalPages = Math.ceil(countPage / limit);
-
-
-            const products = await Product.find().skip((page - 1) * limit).limit(limit).sort({ date: -1 });
-            return res.json({ products, totalPages });
-
-        } else {
-            const products = await Product.find({ isAvailable: true });
-            // Keep the same structure so frontend always works
-            return res.json({ products, totalPages: 1 });
-        }
-    } catch (error) {
-        console.error("Error fetching products:", error);
-        return res.status(500).json({ message: "failed to fetch products" });
-    }
-}
 export async function deleteProducts(req, res) {
 
     if (!isAdmin(req)) {
@@ -99,32 +76,29 @@ export async function updateProducts(req, res) {
 
 }
 
-export async function getproductsInfo(req, res) {
-    const productId = req.params.productId;
+export async function getProductbyId(req, res) {
+    const productId = req.params.productId; // get productId from URL
+    console.log("Requested Product ID:", productId);
 
     try {
+        // Find the product in the database by productId
         const product = await Product.findOne({ productId: productId });
 
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        if (isAdmin(req)) {
-            return res.json(product); // return the object
+        if (!product.isAvailable) {
+            return res.status(404).json({ message: "Product is not available" });
         }
 
-        if (product.isAvailable) {
-            return res.json(product);
-        }
-
-        return res.status(404).json({ message: "Product is not Available" });
-
+        // Send back the product
+        return res.json(product);
     } catch (error) {
-        console.error("Error fetching products", error);
-        res.status(500).json({ message: "Failed to fetch products" });
+        console.error("Error fetching product:", error);
+        return res.status(500).json({ message: "Failed to fetch product" });
     }
 }
-
 
 
 export async function searchproducts(req, res) {
@@ -139,5 +113,30 @@ export async function searchproducts(req, res) {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Failed to fetch products" });
+    }
+}
+
+export async function getProducts(req, res) {
+    const page = parseInt(req.params.page) || 1
+    const limit = parseInt(req.params.limit);
+
+
+    try {
+        if (isAdmin(req)) {
+            let countPage = await Product.countDocuments();
+            let totalPages = Math.ceil(countPage / limit);
+
+
+            const products = await Product.find().skip((page - 1) * limit).limit(limit).sort({ date: -1 });
+            return res.json({ products, totalPages });
+
+        } else {
+            const products = await Product.find({ isAvailable: true });
+            // Keep the same structure so frontend always works
+            return res.json({ products, totalPages: 1 });
+        }
+    } catch (error) {
+        console.error("Error fetching products:", error);
+        return res.status(500).json({ message: "failed to fetch products" });
     }
 }
