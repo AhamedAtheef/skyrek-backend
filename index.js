@@ -7,6 +7,8 @@ import productrouter from "./Router/productRouter.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import orderRouter from "./Router/orderRouter.js";
+import messagerouter from "./Router/messageRouter.js";
+import reviewrouter from "./Router/reviewrouter.js";
 //load .env
 dotenv.config()
 
@@ -50,6 +52,8 @@ mongoose.connect(connectionString).then(() => {
 app.use("/api/products",productrouter)
 app.use("/api/users", userRouter)
 app.use("/api/orders", orderRouter)
+app.use("/api/message", messagerouter )
+app.use("/api/reviews", reviewrouter);
 
 
 app.listen(5000, () => {
