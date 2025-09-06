@@ -40,6 +40,7 @@ const userSchema = new mongoose.Schema(
         type:String,
         default:"https://images.app.goo.gl/QsAzSDyJ94CTJEdw6",
     },
+    
 
 
 })

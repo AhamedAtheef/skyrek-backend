@@ -72,7 +72,7 @@ export function loginUser(req, res) {
 
         const isPasswordCorrect = bcrypt.compareSync(password, user.password);
         if (!isPasswordCorrect) {
-            return res.status(401).json({ message: "Incorrect Password" });
+            return res.status(401).json({ message: "Incorrect Password" }); 
         }
 
         const token = jwt.sign(
@@ -97,7 +97,7 @@ export function loginUser(req, res) {
 }
 
 
-export function adminValidate(req, res) {
+export function adminValidate(req,res){
     if (isAdmin(req)) {
         return res.json({ role: "Admin" });
     } else {
@@ -121,16 +121,14 @@ export async function googlelogin(req, res) {
     const googletoken = req.body.token;
     try {
         /* get user info */
-        const response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo",
-            {
-                headers: {
-                    Authorization: `Bearer ${googletoken}`
-                }
+        const response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
+            headers: {
+                Authorization: `Bearer ${googletoken}`
             }
-        )
+        });
 
         /* check if user exists in db */
-        let user = await User.findOne({ email: response.data.email })
+        let user = await User.findOne({ email: response.data.email });
 
         /* if user exists */
         if (user != null) {
@@ -140,28 +138,25 @@ export async function googlelogin(req, res) {
                 lastName: user.lastName,
                 role: user.role,
                 isBlocked: user.isBlocked
-            }, process.env.Jwt_Key)
-
-            // 🔹 Save token in DB
-            user.token = token;
-            await user.save();
+            }, process.env.Jwt_Key);
 
             return res.json({
                 token: token,
                 role: user.role,
                 message: "Login Success"
-            })
+            });
 
         } else {
             const newuser = new User({
                 email: response.data.email,
-                firstName: response.data.given_name,
-                lastName: response.data.family_name,
-                role: "user",
+                firstName: response.data.given_name || "Google",
+                lastName: response.data.family_name || "User",
+                role: "User",
                 isBlocked: false,
                 isEmailVerified: true,
-                password: "123456"
+                password: "123456"   // dummy password for Google users
             });
+
             await newuser.save();
 
             const token = jwt.sign({
@@ -170,19 +165,16 @@ export async function googlelogin(req, res) {
                 lastName: newuser.lastName,
                 role: newuser.role,
                 isBlocked: newuser.isBlocked
-            }, process.env.Jwt_Key)
-
-            // 🔹 Save token in DB
-            newuser.token = token;
-            await newuser.save();
+            }, process.env.Jwt_Key);
 
             return res.json({
                 token: token,
                 role: newuser.role,
                 message: "Login Success"
-            })
+            });
         }
     } catch (error) {
+        console.log("Google login error:", error); 
         res.status(500).json({
             message: "Failed to login",
             error: error.response?.data || error.message
