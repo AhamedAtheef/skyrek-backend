@@ -72,7 +72,7 @@ export function loginUser(req, res) {
 
         const isPasswordCorrect = bcrypt.compareSync(password, user.password);
         if (!isPasswordCorrect) {
-            return res.status(401).json({ message: "Incorrect Password" }); 
+            return res.status(401).json({ message: "Incorrect Password" });
         }
 
         const token = jwt.sign(
@@ -97,7 +97,7 @@ export function loginUser(req, res) {
 }
 
 
-export function adminValidate(req,res){
+export function adminValidate(req, res) {
     if (isAdmin(req)) {
         return res.json({ role: "Admin" });
     } else {
@@ -130,7 +130,7 @@ export async function googlelogin(req, res) {
         )
 
         /* check if user exists in db */
-        const user = await User.findOne({ email: response.data.email })
+        let user = await User.findOne({ email: response.data.email })
 
         /* if user exists */
         if (user != null) {
@@ -141,13 +141,17 @@ export async function googlelogin(req, res) {
                 role: user.role,
                 isBlocked: user.isBlocked
             }, process.env.Jwt_Key)
+
+            // 🔹 Save token in DB
+            user.token = token;
+            await user.save();
+
             return res.json({
                 token: token,
                 role: user.role,
                 message: "Login Success"
             })
 
-            /* if user doesn't exist */
         } else {
             const newuser = new User({
                 email: response.data.email,
@@ -159,6 +163,7 @@ export async function googlelogin(req, res) {
                 password: "123456"
             });
             await newuser.save();
+
             const token = jwt.sign({
                 email: newuser.email,
                 firstName: newuser.firstName,
@@ -166,6 +171,11 @@ export async function googlelogin(req, res) {
                 role: newuser.role,
                 isBlocked: newuser.isBlocked
             }, process.env.Jwt_Key)
+
+            // 🔹 Save token in DB
+            newuser.token = token;
+            await newuser.save();
+
             return res.json({
                 token: token,
                 role: newuser.role,
@@ -179,6 +189,7 @@ export async function googlelogin(req, res) {
         });
     }
 }
+
 // Create transporter
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
