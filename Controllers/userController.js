@@ -46,7 +46,7 @@ export async function getUser(req, res) {
 
     try {
         if (isAdmin(req)) {
-            const user = await User.find()
+            const user = await User.find().sort({ createdAt: -1 })
             res.json(user)
         } else {
             const user = await User.findOne({ email: req.user.email })
