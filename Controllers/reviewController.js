@@ -25,6 +25,7 @@ export const createReview = async (req, res) => {
 export const deleteReview = async (req, res) => {
   try {
     const { email, name } = req.body;
+    console.log(email, name);
 
     if (!email || !name) {
       return res.status(400).json({ message: "Email and name are required" });
@@ -41,9 +42,11 @@ export const deleteReview = async (req, res) => {
     }
 
     res.json({ message: "Review deleted successfully", review: deletedReview });
+    console.log("Deleted review:", deletedReview);
   } catch (err) {
     console.error("Error deleting review:", err);
     res.status(500).json({ message: err.message });
+    
   }
 };
 export const getReviews = async (req, res) => {
