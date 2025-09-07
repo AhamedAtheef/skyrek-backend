@@ -23,32 +23,24 @@ export const createReview = async (req, res) => {
 };
 
 export const deleteReview = async (req, res) => {
+  const { name, email } = req.params;
+
   try {
-    const { email, name } = req.body;
-    console.log(email, name);
+    const query = email ? { name, email } : { name };
+    const review = await Review.findOneAndDelete(query);
 
-    if (!email || !name) {
-      return res.status(400).json({ message: "Email and name are required" });
-    }
 
-    // Convert name to uppercase to match the stored format
-    const deletedReview = await Review.findOneAndDelete({ 
-      email, 
-      name: name.toUpperCase() 
-    });
 
-    if (!deletedReview) {
+    if (!review) {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    res.json({ message: "Review deleted successfully", review: deletedReview });
-    console.log("Deleted review:", deletedReview);
+    res.json({ message: "Review deleted successfully" });
   } catch (err) {
-    console.error("Error deleting review:", err);
     res.status(500).json({ message: err.message });
-    
   }
 };
+
 export const getReviews = async (req, res) => {
   try {
     const reviews = await Review.find().sort({ createdAt: -1 });
