@@ -41,11 +41,8 @@ const userSchema = new mongoose.Schema(
         default:"https://images.app.goo.gl/QsAzSDyJ94CTJEdw6",
     },
     
+},{timestamps:true})
 
-
-},{timestamps:true}
-
-)
 
 const User = mongoose.model("users",userSchema)
 export default User;

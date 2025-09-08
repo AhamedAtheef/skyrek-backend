@@ -1,9 +1,11 @@
 import express from "express"
-import { adminValidate, createUser, forgetPassword, getUser, googlelogin,loginUser, newPassword, verifyOTP} from "../Controllers/userController.js"
+import { adminValidate, blockUser, createUser, forgetPassword, getUser, googlelogin,loginUser, newPassword, updateUser, verifyOTP} from "../Controllers/userController.js"
 
 const userRouter = express.Router()
 userRouter.post("/",createUser)
-userRouter.get("/",getUser)
+userRouter.get("/:page/:limit",getUser)
+userRouter.put("/",updateUser)
+userRouter.put("/:email",blockUser)
 userRouter.get("/isadmin",adminValidate)
 userRouter.post("/login",loginUser)
 userRouter.post("/google-login",googlelogin)

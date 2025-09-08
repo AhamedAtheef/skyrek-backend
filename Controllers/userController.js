@@ -33,33 +33,42 @@ export function createUser(req, res) {
 }
 
 export async function getUser(req, res) {
+    const page = parseInt(req.params.page) || 1;
+    const limit = parseInt(req.params.limit) || 10;
 
     /*  User.find().then((users) => {
-         res.json(users)
-         console.log("Finding Success")
+     res.json(users)
+     console.log("Finding Success")
  
-     }).catch(() => {
-         res.json({
-             message: "Can't find users"
-         })
-     }) */
+ }).catch(() => {
+     res.json({
+         message: "Can't find users"
+     })
+ }) */
 
     try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized: user not logged in" });
+        }
+
         if (isAdmin(req)) {
-            const user = await User.find().sort({ createdAt: -1 })
-            res.json(user)
+            let countPage = await User.countDocuments();
+            let totalPages = Math.ceil(countPage / limit);
+            const users = await User.find().skip((page - 1) * limit).limit(limit).sort({ createdAt: -1 });
+            return res.json({ users, totalPages });
         } else {
-            const user = await User.findOne({ email: req.user.email })
-            res.json(user)
+            const user = await User.findOne({ email: req.user.email });
+            return res.json(user);
         }
     } catch (error) {
-        res.status(500).json({
-            message: "failed to fetch users",
+        console.error("Error fetching users:", error);
+        return res.status(500).json({
+            message: "Failed to fetch users",
             error: error.message
-        })
+        });
     }
-
 }
+
 
 export function loginUser(req, res) {
     const email = req.body.email;
@@ -72,7 +81,10 @@ export function loginUser(req, res) {
 
         const isPasswordCorrect = bcrypt.compareSync(password, user.password);
         if (!isPasswordCorrect) {
-            return res.status(401).json({ message: "Incorrect Password" }); 
+            return res.status(401).json({ message: "Incorrect Password" });
+        }
+        if (user.isBlocked) {
+            return res.status(401).json({ message: "User is blocked" });
         }
 
         const token = jwt.sign(
@@ -97,7 +109,7 @@ export function loginUser(req, res) {
 }
 
 
-export function adminValidate(req,res){
+export function adminValidate(req, res) {
     if (isAdmin(req)) {
         return res.json({ role: "Admin" });
     } else {
@@ -116,6 +128,63 @@ export function isAdmin(req) {
         return false;
     }
 }
+export async function updateUser(req, res) {
+    const data = req.body;
+    const email = data.email;
+    const name = data.name;
+    try {
+        const findUser = await User.findOne({ email }, { name });
+
+        if (!findUser) {
+            return res.status(404).json({ message: "User not found" });
+        } else {
+            const updateUser = await User.updateOne({ data });
+            return res.json({ message: "User updated successfully", updateUser });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update user", error: error.message });
+
+    }
+}
+
+export async function blockUser(req, res) {
+    const email = req.params.email;
+    const { isBlocked, isEmailVerified } = req.body;
+
+    if (typeof isBlocked !== "boolean" && typeof isEmailVerified !== "boolean") {
+        return res.status(400).json({ message: "Invalid value, must be boolean" });
+    }
+
+    try {
+        const findUser = await User.findOne({ email });
+        if (!findUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const updateFields = {};
+        let message = "";
+
+        if (typeof isBlocked === "boolean") {
+            updateFields.isBlocked = isBlocked;
+            message = `User ${isBlocked ? "blocked" : "unblocked"} successfully`;
+        }
+
+        if (typeof isEmailVerified === "boolean") {
+            updateFields.isEmailVerified = isEmailVerified;
+            message = `Email ${isEmailVerified ? "verified" : "unverified"} successfully`;
+        }
+
+        const updatedUser = await User.updateOne(
+            { email },
+            { $set: updateFields }
+        );
+
+        return res.json({ message, updatedUser });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update user", error: error.message });
+    }
+}
+
 
 export async function googlelogin(req, res) {
     const googletoken = req.body.token;
@@ -174,7 +243,7 @@ export async function googlelogin(req, res) {
             });
         }
     } catch (error) {
-        console.log("Google login error:", error); 
+        console.log("Google login error:", error);
         res.status(500).json({
             message: "Failed to login",
             error: error.response?.data || error.message
