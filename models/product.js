@@ -45,7 +45,7 @@ const productShema=mongoose.Schema(
         default: "cosmatics"
     } 
 
-    }
+    },{ timestamps: true }
 )
 
 const Product= mongoose.model("products",productShema)

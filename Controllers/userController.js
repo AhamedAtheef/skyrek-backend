@@ -19,7 +19,11 @@ export function createUser(req, res) {
         role: req.body.role
 
     }
-
+    if(User.findOne(userData.email)){
+        return res.json({
+            message: "Email already exists"
+        })
+    }
     const user = new User(userData)
     user.save().then(() => {
         res.json({

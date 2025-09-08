@@ -6,21 +6,30 @@ export async function createProducts(req, res) {
 
 
     if (!isAdmin(req)) {
-        return res.status(403).json({ message: "Access denied Admins only" })
+        return res.status(403).json({ message: "Access denied. Admins only." });
     }
-    const product = new Product(req.body)
+
+    const productData = req.body;
+
 
     try {
-        const response = await product.save()
-        res.json({
-            message: "product created successfully",
-            product: response
-        })
+        const existingProduct = await Product.findOne({ productId: productData.productId });
+        if (existingProduct) {
+            return res.status(400).json({ message: "Product ID already exists. Use a unique ID." });
+        }
 
 
+        const product = new Product(productData);
+        const savedProduct = await product.save();
+
+
+        return res.json({
+            message: "Product created successfully",
+            product: savedProduct
+        });
     } catch (error) {
-        console.error("Error creating product:", error)
-        return res.status(500).json({ Message: "failed to create product" })
+        console.error("Error creating product:", error);
+        return res.status(500).json({ message: "Failed to create product", error: error.message });
     }
 
 
@@ -117,26 +126,28 @@ export async function searchproducts(req, res) {
 }
 
 export async function getProducts(req, res) {
-    const page = parseInt(req.params.page) || 1
-    const limit = parseInt(req.params.limit);
-
+    const page = parseInt(req.params.page) || 1;
+    const limit = parseInt(req.params.limit) || 10;
 
     try {
-        if (isAdmin(req)) {
-            let countPage = await Product.countDocuments();
-            let totalPages = Math.ceil(countPage / limit);
-
-
-            const products = await Product.find().skip((page - 1) * limit).limit(limit).sort({ date: -1 });
-            return res.json({ products, totalPages });
-
-        } else {
-            const products = await Product.find({ isAvailable: true });
-            // Keep the same structure so frontend always works
-            return res.json({ products, totalPages: 1 });
+        let query = {};
+        if (!isAdmin(req)) {
+            query.isAvailable = true;
         }
+
+        // Count total documents for this query
+        const count = await Product.countDocuments(query);
+        const totalPages = Math.ceil(count / limit);
+
+        // Fetch products for current page
+        const products = await Product.find(query)
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .sort({ createdAt: -1 }); // Use createdAt (make sure your schema has timestamps)
+
+        return res.json({ products, totalPages });
     } catch (error) {
         console.error("Error fetching products:", error);
-        return res.status(500).json({ message: "failed to fetch products" });
+        return res.status(500).json({ message: "Failed to fetch products", error: error.message });
     }
 }
