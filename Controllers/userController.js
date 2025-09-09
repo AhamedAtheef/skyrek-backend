@@ -19,7 +19,7 @@ export function createUser(req, res) {
         role: req.body.role
 
     }
-    if(User.findOne(userData.email)){
+    if (User.findOne(userData.email)) {
         return res.json({
             message: "Email already exists"
         })
@@ -113,11 +113,16 @@ export function loginUser(req, res) {
 }
 
 
-export function adminValidate(req, res) {
+export async function adminValidate(req, res) {
     if (isAdmin(req)) {
-        return res.json({ role: "Admin" });
+        try {
+            const user = await User.findOne({ email: req.user.email });
+            return res.json(user);
+        } catch {
+            res.status(500).json({ message: "Failed to fetch users", error: error.message });
+        }
     } else {
-        return res.json({ role: "User" });
+        return res.status(403).json({ message: "Access denied. Admins only." });
     }
 }
 
@@ -132,24 +137,29 @@ export function isAdmin(req) {
         return false;
     }
 }
+// userController.js
 export async function updateUser(req, res) {
-    const data = req.body;
-    const email = data.email;
-    const name = data.name;
-    try {
-        const findUser = await User.findOne({ email }, { name });
+    const { email, firstName, lastName, phone } = req.body;
 
-        if (!findUser) {
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
             return res.status(404).json({ message: "User not found" });
-        } else {
-            const updateUser = await User.updateOne({ data });
-            return res.json({ message: "User updated successfully", updateUser });
         }
+
+        // Update fields
+        user.firstName = firstName || user.firstName;
+        user.lastName = lastName || user.lastName;
+        user.phone = phone || user.phone;
+
+        await user.save();
+
+        res.json({ message: "User updated successfully", user });
     } catch (error) {
         res.status(500).json({ message: "Failed to update user", error: error.message });
-
     }
 }
+
 
 export async function blockUser(req, res) {
     const email = req.params.email;

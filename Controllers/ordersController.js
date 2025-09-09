@@ -70,7 +70,20 @@ export async function CreateOrder(req, res) {
     }
 
 }
+export async function getallOrders(req,res) {
+    try{
+        if(!isAdmin(req)){
+            return res.status(403).json({ message: "Access denied. Admins only." });
+        }
+        const orders = await Order.find({});
+        res.json({orders});
 
+    }catch{
+        console.error("Error fetching orders:", error);
+        res.status(500).json({ message: "Failed to fetch orders" });
+    }
+    
+}
 export async function getOrders(req, res) {
     const page = parseInt(req.params.page) || 1;//get page
     const limit = parseInt(req.params.limit) || 10;//get limid or set default

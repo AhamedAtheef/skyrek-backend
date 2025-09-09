@@ -125,6 +125,19 @@ export async function searchproducts(req, res) {
     }
 }
 
+export async function getallproducts(req, res) {
+    try {
+        if(!isAdmin(req)){
+            return res.status(403).json({ message: "Access denied. Admins only." });
+        }
+        const products = await Product.find({ isAvailable: true });
+        res.json({ products });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to fetch products" });
+    }
+}
+
 export async function getProducts(req, res) {
     const page = parseInt(req.params.page) || 1;
     const limit = parseInt(req.params.limit) || 10;
