@@ -7,34 +7,40 @@ import nodemailer from "nodemailer";
 import OTP from "../models/otp.js";
 dotenv.config()
 
-export function createUser(req, res) {
+export async function createUser(req, res) {
+    try {
+        const { firstName, lastName, email, password, role } = req.body;
 
-    const passwordHash = bcrypt.hashSync(req.body.password, 10)
+        // Check if email already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(403).json({
+                message: "Email already exists"
+            });
+        }
 
-    const userData = {
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        password: passwordHash,
-        role: req.body.role
+        // Hash password
+        const passwordHash = bcrypt.hashSync(password, 10);
 
-    }
-    if (User.findOne(userData.email)) {
+        // Create new user
+        const userData = { firstName, lastName, email, password: passwordHash, role };
+        const user = new User(userData);
+
+        await user.save();
+
         return res.json({
-            message: "Email already exists"
-        })
-    }
-    const user = new User(userData)
-    user.save().then(() => {
-        res.json({
-            message: "Saved Success", userData
-        })
-    }).catch(() => {
-        res.json({
+            message: "Saved Success",
+            userData
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
             message: "Not Saved"
-        })
-    })
+        });
+    }
 }
+
 
 export async function getUser(req, res) {
     const page = parseInt(req.params.page) || 1;
@@ -139,7 +145,7 @@ export function isAdmin(req) {
 }
 // userController.js
 export async function updateUser(req, res) {
-    const { email, firstName, lastName, phone } = req.body;
+    const { email, firstName, lastName, phone, image } = req.body;
 
     try {
         const user = await User.findOne({ email });
@@ -151,6 +157,8 @@ export async function updateUser(req, res) {
         user.firstName = firstName || user.firstName;
         user.lastName = lastName || user.lastName;
         user.phone = phone || user.phone;
+        user.email = email || user.email;
+        user.image = image || user.image;
 
         await user.save();
 
@@ -356,5 +364,24 @@ export async function newPassword(req, res) {
         }
     } catch {
         return res.json({ success: false, message: "Failed to reset password" });
+    }
+}
+
+export async function deleteOne(req, res) {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        const isPasswordCorrect = bcrypt.compareSync(password, user.password);
+        if (!isPasswordCorrect) {
+            return res.status(401).json({ message: "Incorrect Password" });
+        }
+        await User.deleteOne({ email });
+        return res.status(200).json({ message: "User deleted successfully" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Server error" });
     }
 }
