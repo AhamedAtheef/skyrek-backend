@@ -111,6 +111,7 @@ export function loginUser(req, res) {
             message: "Login success",
             token: token,
             role: user.role,
+            email: user.email
         });
     }).catch((err) => {
         console.error(err);

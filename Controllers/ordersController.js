@@ -39,7 +39,7 @@ export async function CreateOrder(req, res) {
                     qty: item.qty
 
                 });
-                
+
                 total = req.body.total;
             }
 
@@ -70,19 +70,19 @@ export async function CreateOrder(req, res) {
     }
 
 }
-export async function getallOrders(req,res) {
-    try{
-        if(!isAdmin(req)){
+export async function getallOrders(req, res) {
+    try {
+        if (!isAdmin(req)) {
             return res.status(403).json({ message: "Access denied. Admins only." });
         }
         const orders = await Order.find({});
-        res.json({orders});
+        res.json({ orders });
 
-    }catch{
+    } catch {
         console.error("Error fetching orders:", error);
         res.status(500).json({ message: "Failed to fetch orders" });
     }
-    
+
 }
 export async function getOrders(req, res) {
     const page = parseInt(req.params.page) || 1;//get page
@@ -120,13 +120,30 @@ export async function getOrders(req, res) {
     }
 }
 
-export async function updateOrder(req, res) {
-    if (!isAdmin(req)) {
-        return res.status(403).json({ message: "Access denied. Admins only." });
+// orderController.js
+// Make sure your auth middleware sets req.user from the JWT token
+export async function getOrder(req, res) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Please login first" });
+        }
+
+        const email = req.user.email; // get email from authenticated user
+        const orders = await Order.find({ email }).sort({ date: -1 });
+
+        res.json({ orders });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to fetch orders" });
     }
+}
+
+
+
+export async function updateOrder(req, res) {
 
     try {
-        const order = await Order.findOneAndUpdate({orderID:req.params.orderID});
+        const order = await Order.findOneAndUpdate({ orderID: req.params.orderID });
 
         if (!order) {
             return res.status(404).json({ message: "Order not found" });
